@@ -5,9 +5,9 @@ from random import randint
 pygame.init()
 
 # global const variables
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 800
-NO_ENEMIES = 10
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 600
+NO_ENEMIES = 7
 
 class Entity:
     image: pygame.surface.Surface = 0
@@ -38,6 +38,7 @@ def out_of_bounds(entity: Entity) -> None:
             return
             
         case "Enemy":
+            # bounce the enemy off the wall by inverting the direction of its motion
             if entity.x + entity.image.get_width() >= SCREEN_WIDTH or entity.x <= 0:
                 entity.speed *= -1
 
@@ -75,21 +76,31 @@ def main():
     global SCREEN_HEIGHT
 
     main_window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Space Invaders")
-    pygame.display.set_icon(pygame.image.load("Space Invaders/res/gameicon.png"))
 
-    player = Entity(image=pygame.image.load("Space Invaders/res/player.png"), type="Player")
-    player.x, player.y, player.speed = (SCREEN_WIDTH / 2) - player.image.get_width(), SCREEN_HEIGHT - player.image.get_height() - 10, 0.5 
+    # images
+    bg_img = pygame.image.load("Space Invaders/res/background.png")
+    player_img = pygame.image.load("Space Invaders/res/player.png")
+    enemy_img = pygame.image.load("Space Invaders/res/enemy.png")
+    game_icon_img = pygame.image.load("Space Invaders/res/gameicon.png")
+
+    pygame.display.set_caption("Space Invaders")
+    pygame.display.set_icon(game_icon_img)
+
+    player = Entity(image=player_img, type="Player")
+    player.x, player.y, player.speed = (SCREEN_WIDTH / 2) - player.image.get_width(), SCREEN_HEIGHT - player.image.get_height() - 10, 2 
 
     enemies: list[Entity] = []
 
     # spawn random enemies on the upper half of the screen
     for _ in range(NO_ENEMIES):
-        enemies.append(Entity(image=pygame.image.load("Space Invaders/res/enemy.png"), type="Enemy", x=randint(0, SCREEN_WIDTH - 64), y=randint(0, SCREEN_HEIGHT) / 2, speed=0.7))
+        enemies.append(Entity(image=enemy_img, type="Enemy", x=randint(0, SCREEN_WIDTH - 64), y=randint(0, SCREEN_HEIGHT) / 2, speed=1.4))
 
     # main game loop
     game_running = True
     while game_running:
+        # background image
+        main_window.blit(bg_img, (0,0))
+
         # event handling, per frame
         for event in pygame.event.get():
             # exit the game
@@ -113,11 +124,8 @@ def main():
         for enemy in enemies:
             main_window.blit(enemy.image, (enemy.x, enemy.y))
 
-        print(enemies[0].dx)
-
         # update the display
         pygame.display.update()
-        main_window.fill((0,0,0))
     
     pygame.quit()
 
