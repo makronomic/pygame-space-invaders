@@ -74,7 +74,7 @@ def main():
 
     # spawn random enemies on the upper half of the screen
     for _ in range(NO_ENEMIES):
-        enemies.append(Entity(image=pygame.image.load("Space Invaders/res/enemy.png"), type="Enemy", x=randint(0, SCREEN_WIDTH - 64), y=randint(0, SCREEN_HEIGHT) / 2, speed=1))
+        enemies.append(Entity(image=pygame.image.load("Space Invaders/res/enemy.png"), type="Enemy", x=randint(0, SCREEN_WIDTH - 64), y=randint(0, SCREEN_HEIGHT) / 2, speed=0.7))
 
     # main game loop
     game_running = True
