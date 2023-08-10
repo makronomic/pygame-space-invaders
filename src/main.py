@@ -42,19 +42,18 @@ class Entity:
         self.speed = speed
         self.dx = 0
     
-    def fire_bullet(self, bullet: Bullet) -> None:
+    def handle_bullet_state(self, bullet: Bullet) -> None:
         match bullet.state:
             case "ready":
-                bullet.state = "fire"
-
-                return
-
-            case "fire":
-                # fire the bullet from the center of the sprite
+                # set the bullet's position
                 bullet.x = self.x + (bullet.image.get_width() / 2)
                 bullet.y = self.y - bullet.image.get_height()
 
- 
+                bullet.state = "fire"
+
+            case "fire":
+                if bullet.y <= 0:
+                    bullet.state = "ready"
 
 def out_of_bounds(entity: Entity) -> None:
     match entity.type:
@@ -74,7 +73,23 @@ def out_of_bounds(entity: Entity) -> None:
 
             return
 
-def handle_movement(entity: Entity) -> None:
+def handle_bullet_movement(bullet: Bullet, screen: pygame.surface.Surface) -> None:
+    match bullet.state:
+        case "ready":
+            pass
+
+        case "fire":
+            # draw the bullet
+            screen.blit(bullet.image, (bullet.x, bullet.y))
+
+            # assumes the bullet is already at the head of the spaceship
+            bullet.dy = -bullet.speed
+
+    # apply the change in the position
+    bullet.y += bullet.dy
+
+
+def handle_entity_movement(entity: Entity) -> None:
     match entity.type:
         case "Player":
             # get the activation state of every key
@@ -151,7 +166,7 @@ def main():
             # firing a bullet
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    player.fire_bullet(bullet)
+                    player.handle_bullet_state(bullet)
 
         # out of bounds checking for the entities
         out_of_bounds(player)
@@ -159,9 +174,12 @@ def main():
             out_of_bounds(enemy)
 
         # handle continuous button holds, such as holding a movement key
-        handle_movement(player)
+        handle_entity_movement(player)
         for enemy in enemies:
-            handle_movement(enemy)
+            handle_entity_movement(enemy)
+
+        # handle the bullet firing or not
+        handle_bullet_movement(bullet=bullet, screen=main_window)
 
         # draw the player
         main_window.blit(player.image, (player.x, player.y))
@@ -169,9 +187,6 @@ def main():
         # draw all the enemies
         for enemy in enemies:
             main_window.blit(enemy.image, (enemy.x, enemy.y))
-
-        # draw the bullet
-        main_window.blit(bullet.image, (bullet.x, bullet.y))
 
         # update the display
         pygame.display.update()
