@@ -25,6 +25,24 @@ class Entity:
         self.speed = speed
         self.dx = 0
  
+
+def out_of_bounds(entity: Entity) -> None:
+    match entity.type:
+        case "Player":
+            if entity.x > SCREEN_WIDTH: entity.x = 0
+            if entity.x + entity.image.get_width() < 0: entity.x = SCREEN_WIDTH
+
+            if entity.y > SCREEN_HEIGHT: entity.y = 0
+            if entity.y < 0: entity.y = SCREEN_HEIGHT
+
+            return
+            
+        case "Enemy":
+            if entity.x + entity.image.get_width() >= SCREEN_WIDTH or entity.x <= 0:
+                entity.speed *= -1
+
+            return
+
 def handle_movement(entity: Entity) -> None:
     match entity.type:
         case "Player":
@@ -50,13 +68,6 @@ def handle_movement(entity: Entity) -> None:
 
     # apply the change in the position
     entity.x += entity.dx
-
-def out_of_bounds(entity: Entity) -> None:
-    if entity.x > SCREEN_WIDTH: entity.x = 0
-    if entity.x + entity.image.get_width() < 0: entity.x = SCREEN_WIDTH
-
-    if entity.y > SCREEN_HEIGHT: entity.y = 0
-    if entity.y < 0: entity.y = SCREEN_HEIGHT
 
 def main():
     # setup the window, sprites, etc...
@@ -101,6 +112,8 @@ def main():
         # draw all the enemies
         for enemy in enemies:
             main_window.blit(enemy.image, (enemy.x, enemy.y))
+
+        print(enemies[0].dx)
 
         # update the display
         pygame.display.update()
