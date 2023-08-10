@@ -7,7 +7,23 @@ pygame.init()
 # global const variables
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 600
-NO_ENEMIES = 7
+NO_ENEMIES = 5
+
+class Bullet:
+    image: pygame.surface.Surface = 0
+    state: str = ""
+    x: float = 0
+    y: float = 0
+    speed: float = 0
+    dy: float = 0
+
+    def __init__(self, image: pygame.surface.Surface, state: str = "ready", x: float = 0, y: float = 0, speed: float = 0):
+        self.image = image
+        self.state = state
+        self.x = x
+        self.y = y
+        self.speed = speed
+        self.dy = 0
 
 class Entity:
     image: pygame.surface.Surface = 0
@@ -16,6 +32,7 @@ class Entity:
     y: float = 0
     speed: float = 0
     dx: float = 0
+    dy: float = 0
 
     def __init__(self, image: pygame.surface.Surface, type: str, x: float = 0, y: float = 0, speed: float = 0):
         self.image = image
@@ -24,6 +41,19 @@ class Entity:
         self.y = y
         self.speed = speed
         self.dx = 0
+    
+    def fire_bullet(self, bullet: Bullet) -> None:
+        match bullet.state:
+            case "ready":
+                bullet.state = "fire"
+
+                return
+
+            case "fire":
+                # fire the bullet from the center of the sprite
+                bullet.x = self.x + (bullet.image.get_width() / 2)
+                bullet.y = self.y - bullet.image.get_height()
+
  
 
 def out_of_bounds(entity: Entity) -> None:
@@ -64,11 +94,16 @@ def handle_movement(entity: Entity) -> None:
         case "Enemy":
             entity.dx = entity.speed
 
+            # get the enemies closer to the player
+            entity.dy = 0.1
+
         case _:
             return
 
     # apply the change in the position
     entity.x += entity.dx
+    entity.y += entity.dy
+
 
 def main():
     # setup the window, sprites, etc...
@@ -82,18 +117,24 @@ def main():
     player_img = pygame.image.load("Space Invaders/res/player.png")
     enemy_img = pygame.image.load("Space Invaders/res/enemy.png")
     game_icon_img = pygame.image.load("Space Invaders/res/gameicon.png")
+    bullet_img = pygame.image.load("Space Invaders/res/bullet.png")
 
     pygame.display.set_caption("Space Invaders")
     pygame.display.set_icon(game_icon_img)
 
+    # player
     player = Entity(image=player_img, type="Player")
     player.x, player.y, player.speed = (SCREEN_WIDTH / 2) - player.image.get_width(), SCREEN_HEIGHT - player.image.get_height() - 10, 2 
 
+    # enemies
     enemies: list[Entity] = []
 
     # spawn random enemies on the upper half of the screen
     for _ in range(NO_ENEMIES):
         enemies.append(Entity(image=enemy_img, type="Enemy", x=randint(0, SCREEN_WIDTH - 64), y=randint(0, SCREEN_HEIGHT) / 2, speed=1.4))
+
+    # bullet
+    bullet = Bullet(image=bullet_img, speed=2)
 
     # main game loop
     game_running = True
@@ -106,6 +147,11 @@ def main():
             # exit the game
             if event.type == pygame.QUIT:
                 game_running = False
+                
+            # firing a bullet
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    player.fire_bullet(bullet)
 
         # out of bounds checking for the entities
         out_of_bounds(player)
@@ -123,6 +169,9 @@ def main():
         # draw all the enemies
         for enemy in enemies:
             main_window.blit(enemy.image, (enemy.x, enemy.y))
+
+        # draw the bullet
+        main_window.blit(bullet.image, (bullet.x, bullet.y))
 
         # update the display
         pygame.display.update()
