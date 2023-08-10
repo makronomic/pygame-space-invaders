@@ -52,8 +52,7 @@ class Entity:
                 bullet.state = "fire"
 
             case "fire":
-                if bullet.y <= 0:
-                    bullet.state = "ready"
+                pass
 
 def out_of_bounds(entity: Entity) -> None:
     match entity.type:
@@ -178,7 +177,11 @@ def main():
         for enemy in enemies:
             handle_entity_movement(enemy)
 
-        # handle the bullet firing or not
+        # checking independent of events whether the bullet is ready to fire or no
+        if bullet.y <= 0:
+            bullet.state = "ready"
+
+        # handle the bullet firing mechanism
         handle_bullet_movement(bullet=bullet, screen=main_window)
 
         # draw the player
