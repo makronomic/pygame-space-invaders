@@ -10,6 +10,9 @@ SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 600
 NO_ENEMIES = 5
 
+# score tracker
+score_value = 0
+
 class Bullet:
     image: pygame.surface.Surface = 0
 
@@ -79,6 +82,11 @@ class Entity:
 
             case "fire":
                 pass
+
+def show_score(font, screen) -> None:
+    global score_value
+
+    screen.blit(font.render(f"[( Score:  {score_value} )]", True, (255, 255, 255)), (10, 10))
 
 def out_of_bounds(entity: Entity) -> None:
     match entity.e_type:
@@ -157,6 +165,8 @@ def handle_entity_movement(entity: Entity) -> None:
     entity.y += entity.dy
 
 def reset_bullet(bullet: Bullet, enemies: list[Entity]) -> None:
+    global score_value
+
     # 1st case: bullet didn't hit any enemy and went out of bounds
     if bullet.y <= 0:
         bullet.state = "ready"
@@ -169,6 +179,8 @@ def reset_bullet(bullet: Bullet, enemies: list[Entity]) -> None:
         if bullet.hitbox.colliderect(enemy.hitbox):
             bullet.state = "ready"
             
+            score_value += 1
+
             bullet.x, bullet.y = 0, 0
 
 
@@ -178,6 +190,9 @@ def main():
     global SCREEN_HEIGHT
 
     main_window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    # fonts
+    font = pygame.font.Font("Space Invaders/res/Handjet-Light.ttf", 32)
 
     # images
     bg_img = pygame.image.load("Space Invaders/res/background.png")
@@ -253,6 +268,9 @@ def main():
         # draw all the enemies
         for enemy in enemies:
             draw(entity=enemy,window=main_window)
+
+        # display score after 
+        show_score(font, main_window)
 
         # update the display
         pygame.display.update()
