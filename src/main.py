@@ -1,6 +1,6 @@
 import pygame
 from random import randint
-from math import sqrt
+from math import sqrt, pow
 
 # initialize pygame
 pygame.init()
@@ -15,6 +15,8 @@ class Bullet:
 
     state: str = ""
 
+    hitbox: pygame.Rect = 0
+
     x: float = 0
     y: float = 0
     speed: float = 0
@@ -28,10 +30,17 @@ class Bullet:
         self.speed = speed
         self.dy = 0
 
+        self.hitbox = pygame.Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
+
+    def update_hitbox(self) -> None:
+        self.hitbox.update(self.x, self.y, self.image.get_width(), self.image.get_height())
+
 class Entity:
     image: pygame.surface.Surface = 0
 
-    type: str = "" 
+    e_type: str = "" 
+
+    hitbox: pygame.Rect = 0
 
     x: float = 0
     y: float = 0
@@ -41,18 +50,23 @@ class Entity:
 
     alive: bool = True
 
-    def __init__(self, image: pygame.surface.Surface, type: str, x: float = 0, y: float = 0, speed: float = 0):
+    def __init__(self, image: pygame.surface.Surface, e_type: str, x: float = 0, y: float = 0, speed: float = 0):
         self.image = image
-        self.type = type
+        self.e_type = e_type
         self.x = x
         self.y = y
         self.speed = speed
         self.dx = 0
         self.alive = True
+
+        self.hitbox = pygame.Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
     
+    def update_hitbox(self) -> None:
+        self.hitbox.update(self.x, self.y, self.image.get_width(), self.image.get_height())
+
     def prepare_bullet(self, bullet: Bullet) -> None:
         # only players can fire bullets
-        if self.type is "enemy":
+        if self.e_type == "enemy":
             return
         
         match bullet.state:
@@ -67,10 +81,10 @@ class Entity:
                 pass
 
 def collide(entity: Entity, bullet: Bullet) -> bool:
-    return sqrt((entity.x - bullet.x) ** 2 + (entity.y - bullet.y) ** 2) <= 5
+    return sqrt(pow(entity.x - bullet.x, 2) + pow(entity.y - bullet.y, 2)) <= 27
 
 def out_of_bounds(entity: Entity) -> None:
-    match entity.type:
+    match entity.e_type:
         case "Player":
             if entity.x > SCREEN_WIDTH: entity.x = 0
             if entity.x + entity.image.get_width() < 0: entity.x = SCREEN_WIDTH
@@ -104,10 +118,10 @@ def handle_bullet_movement(bullet: Bullet, screen: pygame.surface.Surface) -> No
 
 def is_alive(entity: Entity, bullet: Bullet) -> None:
     # player doesn't "die"
-    if entity.type is "player":
+    if entity.e_type == "player":
         return
     
-    if collide(entity, bullet):
+    if entity.hitbox.colliderect(bullet.hitbox):
         entity.alive = False
     
 def draw(entity: Entity, window: pygame.surface.Surface) -> None:
@@ -115,7 +129,7 @@ def draw(entity: Entity, window: pygame.surface.Surface) -> None:
         window.blit(entity.image, (entity.x, entity.y))
 
 def handle_entity_movement(entity: Entity) -> None:
-    match entity.type:
+    match entity.e_type:
         case "Player":
             # get the activation state of every key
             keys = pygame.key.get_pressed()
@@ -154,7 +168,7 @@ def reset_bullet(bullet: Bullet, enemies: list[Entity]) -> None:
     
     # 2nd case: bullet hit an enemy, WIP
     for enemy in enemies:
-        if collide(entity=enemy, bullet=bullet):
+        if bullet.hitbox.colliderect(enemy.hitbox):
             bullet.state = "ready"
 
 
@@ -176,7 +190,7 @@ def main():
     pygame.display.set_icon(game_icon_img)
 
     # player
-    player = Entity(image=player_img, type="Player")
+    player = Entity(image=player_img, e_type="Player")
     player.x, player.y, player.speed = (SCREEN_WIDTH / 2) - player.image.get_width(), SCREEN_HEIGHT - player.image.get_height() - 10, 2 
 
     # enemies
@@ -184,7 +198,7 @@ def main():
 
     # spawn random enemies on the upper half of the screen
     for _ in range(NO_ENEMIES):
-        enemies.append(Entity(image=enemy_img, type="Enemy", x=randint(0, SCREEN_WIDTH - 64), y=randint(0, SCREEN_HEIGHT) / 2, speed=1.4))
+        enemies.append(Entity(image=enemy_img, e_type="Enemy", x=randint(0, SCREEN_WIDTH - 64), y=randint(0, SCREEN_HEIGHT) / 2, speed=1.4))
 
     # bullet
     bullet = Bullet(image=bullet_img, speed=2)
@@ -205,6 +219,11 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.prepare_bullet(bullet)
+
+        # update the hitboxes of the bullet and the enemies
+        bullet.update_hitbox()
+        for enemy in enemies:
+            enemy.update_hitbox()
 
         # out of bounds checking for the entities
         out_of_bounds(player)
