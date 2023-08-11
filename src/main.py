@@ -1,5 +1,6 @@
 import pygame
 from random import randint
+from math import sqrt
 
 # initialize pygame
 pygame.init()
@@ -11,7 +12,9 @@ NO_ENEMIES = 5
 
 class Bullet:
     image: pygame.surface.Surface = 0
+
     state: str = ""
+
     x: float = 0
     y: float = 0
     speed: float = 0
@@ -27,12 +30,16 @@ class Bullet:
 
 class Entity:
     image: pygame.surface.Surface = 0
+
     type: str = "" 
+
     x: float = 0
     y: float = 0
     speed: float = 0
     dx: float = 0
     dy: float = 0
+
+    alive: bool = True
 
     def __init__(self, image: pygame.surface.Surface, type: str, x: float = 0, y: float = 0, speed: float = 0):
         self.image = image
@@ -41,8 +48,13 @@ class Entity:
         self.y = y
         self.speed = speed
         self.dx = 0
+        self.alive = True
     
-    def handle_bullet_state(self, bullet: Bullet) -> None:
+    def prepare_bullet(self, bullet: Bullet) -> None:
+        # only players can fire bullets
+        if self.type is "enemy":
+            return
+        
         match bullet.state:
             case "ready":
                 # set the bullet's position
@@ -53,6 +65,9 @@ class Entity:
 
             case "fire":
                 pass
+
+def collide(entity: Entity, bullet: Bullet) -> bool:
+    return sqrt((entity.x - bullet.x) ** 2 + (entity.y - bullet.y) ** 2) <= 5
 
 def out_of_bounds(entity: Entity) -> None:
     match entity.type:
@@ -87,6 +102,17 @@ def handle_bullet_movement(bullet: Bullet, screen: pygame.surface.Surface) -> No
     # apply the change in the position
     bullet.y += bullet.dy
 
+def is_alive(entity: Entity, bullet: Bullet) -> None:
+    # player doesn't "die"
+    if entity.type is "player":
+        return
+    
+    if collide(entity, bullet):
+        entity.alive = False
+    
+def draw(entity: Entity, window: pygame.surface.Surface) -> None:
+    if entity.alive:
+        window.blit(entity.image, (entity.x, entity.y))
 
 def handle_entity_movement(entity: Entity) -> None:
     match entity.type:
@@ -106,10 +132,11 @@ def handle_entity_movement(entity: Entity) -> None:
                 entity.dx = 0
             
         case "Enemy":
-            entity.dx = entity.speed
+            if entity.alive:
+                entity.dx = entity.speed
 
-            # get the enemies closer to the player
-            entity.dy = 0.1
+                # get the enemies closer to the player
+                entity.dy = 0.1
 
         case _:
             return
@@ -117,6 +144,18 @@ def handle_entity_movement(entity: Entity) -> None:
     # apply the change in the position
     entity.x += entity.dx
     entity.y += entity.dy
+
+def reset_bullet(bullet: Bullet, enemies: list[Entity]) -> None:
+    # 1st case: bullet didn't hit any enemy and went out of bounds
+    if bullet.y <= 0:
+        bullet.state = "ready"
+
+        return 
+    
+    # 2nd case: bullet hit an enemy, WIP
+    for enemy in enemies:
+        if collide(entity=enemy, bullet=bullet):
+            bullet.state = "ready"
 
 
 def main():
@@ -162,10 +201,10 @@ def main():
             if event.type == pygame.QUIT:
                 game_running = False
                 
-            # firing a bullet
+            # preparing a bullet to be fired
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    player.handle_bullet_state(bullet)
+                    player.prepare_bullet(bullet)
 
         # out of bounds checking for the entities
         out_of_bounds(player)
@@ -177,19 +216,24 @@ def main():
         for enemy in enemies:
             handle_entity_movement(enemy)
 
-        # checking independent of events whether the bullet is ready to fire or no
-        if bullet.y <= 0:
-            bullet.state = "ready"
+        # check for the bullet resetting
+        reset_bullet(bullet=bullet, enemies=enemies)
 
         # handle the bullet firing mechanism
         handle_bullet_movement(bullet=bullet, screen=main_window)
 
+        # checking if an enemy got hit after the bullet fired
+        for enemy in enemies:
+            is_alive(entity=enemy, bullet=bullet)
+
+        ### DRAWING ###
+
         # draw the player
-        main_window.blit(player.image, (player.x, player.y))
+        draw(entity=player,window=main_window)
 
         # draw all the enemies
         for enemy in enemies:
-            main_window.blit(enemy.image, (enemy.x, enemy.y))
+            draw(entity=enemy,window=main_window)
 
         # update the display
         pygame.display.update()
