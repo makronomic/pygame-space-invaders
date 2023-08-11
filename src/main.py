@@ -80,9 +80,6 @@ class Entity:
             case "fire":
                 pass
 
-def collide(entity: Entity, bullet: Bullet) -> bool:
-    return sqrt(pow(entity.x - bullet.x, 2) + pow(entity.y - bullet.y, 2)) <= 27
-
 def out_of_bounds(entity: Entity) -> None:
     match entity.e_type:
         case "Player":
@@ -164,12 +161,15 @@ def reset_bullet(bullet: Bullet, enemies: list[Entity]) -> None:
     if bullet.y <= 0:
         bullet.state = "ready"
 
+        bullet.x, bullet.y = 0, 0
         return 
     
     # 2nd case: bullet hit an enemy, WIP
     for enemy in enemies:
         if bullet.hitbox.colliderect(enemy.hitbox):
             bullet.state = "ready"
+            
+            bullet.x, bullet.y = 0, 0
 
 
 def main():
