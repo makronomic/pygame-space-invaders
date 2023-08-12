@@ -128,6 +128,8 @@ def is_alive(entity: Entity, bullet: Bullet) -> None:
     
     if entity.hitbox.colliderect(bullet.hitbox):
         entity.alive = False
+        entity.x = SCREEN_WIDTH
+        entity.y = SCREEN_HEIGHT
     
 def draw(entity: Entity, window: pygame.surface.Surface) -> None:
     if entity.alive:
