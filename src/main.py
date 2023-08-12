@@ -91,8 +91,8 @@ def show_score(font, screen) -> None:
 def out_of_bounds(entity: Entity) -> None:
     match entity.e_type:
         case "Player":
-            if entity.x > SCREEN_WIDTH: entity.x = 0
-            if entity.x + entity.image.get_width() < 0: entity.x = SCREEN_WIDTH
+            if entity.x + entity.image.get_width() >= SCREEN_WIDTH: entity.x = SCREEN_WIDTH - entity.image.get_width()
+            if entity.x <= 0: entity.x = 0
 
             if entity.y > SCREEN_HEIGHT: entity.y = 0
             if entity.y < 0: entity.y = SCREEN_HEIGHT
